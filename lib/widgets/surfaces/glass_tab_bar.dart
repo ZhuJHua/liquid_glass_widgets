@@ -227,6 +227,7 @@ class GlassTabBar extends StatefulWidget with GlassDynamicPreferredSize {
     GlassQuality? backgroundQuality,
     double magnification = 1.15,
     double innerBlur = 0.0,
+    double restFrost = 0.0,
     MaskingQuality maskingQuality = MaskingQuality.high,
     GlobalKey? backgroundKey,
     double? tabWidth,
@@ -286,6 +287,7 @@ class GlassTabBar extends StatefulWidget with GlassDynamicPreferredSize {
           backgroundQuality: backgroundQuality,
           magnification: magnification,
           innerBlur: innerBlur,
+          restFrost: restFrost,
           maskingQuality: maskingQuality,
           backgroundKey: backgroundKey,
           tabWidth: tabWidth,
@@ -834,6 +836,7 @@ class GlassTabBar extends StatefulWidget with GlassDynamicPreferredSize {
       this.showIndicator = true,
       this.magnification = 1.15,
       this.innerBlur = 0.0,
+      this.restFrost = 0.0,
       this.glowDuration = const Duration(milliseconds: 300),
       this.glowBlurRadius = 32,
       this.glowSpreadRadius = 8,
@@ -1053,6 +1056,11 @@ class GlassTabBar extends StatefulWidget with GlassDynamicPreferredSize {
 
   /// Blur applied to content inside the indicator (bottom/searchable).
   final double innerBlur;
+
+  /// Sigma of a backdrop blur laid UNDER the bar glass at the resting
+  /// selected tab (bottom only), so the selected platter frosts the content
+  /// itself rather than the already-frosted bar. `0.0` (default) disables it.
+  final double restFrost;
 
   /// Duration of the per-tab glow animation. Defaults to 300 ms.
   final Duration glowDuration;
@@ -1416,6 +1424,7 @@ class _GlassTabBarState extends State<GlassTabBar> {
       backgroundQuality: widget.backgroundQuality,
       magnification: widget.magnification,
       innerBlur: widget.innerBlur,
+      restFrost: widget.restFrost,
       maskingQuality: widget.maskingQuality,
       backgroundKey: widget.backgroundKey,
       tabWidth: widget.tabWidth,

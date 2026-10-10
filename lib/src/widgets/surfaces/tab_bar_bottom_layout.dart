@@ -10,7 +10,10 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart' show ValueListenable;
 import '../../renderer/liquid_glass_renderer.dart';
 import '../../types/glass_interaction_behavior.dart';
+import '../../../constants/glass_defaults.dart';
 import '../../../types/glass_quality.dart';
+import '../../../utils/draggable_indicator_physics.dart';
+import '../../../widgets/shared/animated_glass_indicator.dart';
 import '../../../widgets/shared/adaptive_liquid_glass_layer.dart';
 import '../../../widgets/shared/glass_content_aware_scope.dart';
 import '../../../theme/glass_theme_data.dart';
@@ -76,6 +79,7 @@ class TabBarBottomLayout extends StatefulWidget {
     this.backgroundQuality,
     this.magnification = 1.15,
     this.innerBlur = 0.0,
+    this.restFrost = 0.0,
     this.maskingQuality = MaskingQuality.high,
     this.backgroundKey,
     this.tabWidth,
@@ -134,6 +138,7 @@ class TabBarBottomLayout extends StatefulWidget {
   final GlassQuality? backgroundQuality;
   final double magnification;
   final double innerBlur;
+  final double restFrost;
   final MaskingQuality maskingQuality;
   final GlobalKey? backgroundKey;
   final double? tabWidth;
@@ -455,7 +460,23 @@ class _TabBarBottomLayoutState extends State<TabBarBottomLayout>
       ),
     );
 
-    if (widget.bottomAccessory == null) return pillLayer;
+    final bar = widget.restFrost > 0 && widget.showIndicator
+        ? Stack(
+            clipBehavior: Clip.none,
+            children: [
+              Positioned.fill(
+                child: _buildRestFrost(
+                  tabCount: tabs.length,
+                  selectedIndex: selectedIndex,
+                  quality: effectiveQuality,
+                ),
+              ),
+              pillLayer,
+            ],
+          )
+        : pillLayer;
+
+    if (widget.bottomAccessory == null) return bar;
 
     return Column(
       mainAxisSize: MainAxisSize.min,
@@ -477,8 +498,84 @@ class _TabBarBottomLayoutState extends State<TabBarBottomLayout>
                 : const SizedBox.shrink(),
           ),
         ),
-        pillLayer,
+        bar,
       ],
+    );
+  }
+
+  /// A backdrop blur at the resting selected tab, painted before the bar's
+  /// glass layer so the glass reads already-frosted content there. The glass
+  /// layer paints its glass before its children, so a blur inside the bar can
+  /// only ever reach the frosted bar, never the content beneath it.
+  Widget _buildRestFrost({
+    required int tabCount,
+    required int selectedIndex,
+    required GlassQuality quality,
+  }) {
+    const indicatorPadding = 4.0;
+    final indicatorRadius = widget.indicatorBorderRadius ??
+        (widget.barBorderRadius >= GlassDefaults.capsuleRadius
+            ? GlassDefaults.capsuleRadius
+            : (widget.barBorderRadius - indicatorPadding)
+                .clamp(0.0, GlassDefaults.capsuleRadius));
+    return IgnorePointer(
+      child: Padding(
+        padding: EdgeInsets.symmetric(
+          horizontal: widget.horizontalPadding,
+          vertical: widget.verticalPadding,
+        ),
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            final extra = widget.extraButton != null
+                ? _resolvedExtraButtonConfig()
+                : null;
+            final extraW = extra != null ? extra.size + widget.spacing : 0.0;
+            final extraOnLeft =
+                extra?.placement == GlassExtraButtonPlacement.left;
+            final pillW = resolveTabPillWidth(
+              tabWidth: widget.tabWidth,
+              tabCount: tabCount,
+              maxAvailable: constraints.maxWidth - extraW,
+            );
+            return Stack(
+              clipBehavior: Clip.none,
+              children: [
+                Positioned(
+                  left: extraOnLeft ? extraW : 0.0,
+                  top: 0,
+                  width: pillW,
+                  height: widget.barHeight,
+                  child: TweenAnimationBuilder<double>(
+                    tween: Tween(
+                      end: DraggableIndicatorPhysics.computeAlignment(
+                        selectedIndex,
+                        tabCount,
+                      ),
+                    ),
+                    duration: const Duration(milliseconds: 350),
+                    curve: Curves.easeOutCubic,
+                    builder: (context, x, _) => AnimatedGlassIndicator(
+                      velocity: 0,
+                      itemCount: tabCount,
+                      alignment: Alignment(x, 0),
+                      thickness: 0,
+                      quality: quality,
+                      indicatorColor: const Color(0x00000000),
+                      isBackgroundIndicator: false,
+                      paintBackground: true,
+                      paintGlass: false,
+                      innerBlur: widget.restFrost,
+                      padding: const EdgeInsets.all(indicatorPadding),
+                      expansion: widget.indicatorExpansion,
+                      borderRadius: indicatorRadius,
+                    ),
+                  ),
+                ),
+              ],
+            );
+          },
+        ),
+      ),
     );
   }
 

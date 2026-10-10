@@ -57,6 +57,8 @@ class GlassTabBarExtraButton {
     this.position = GlassExtraButtonPosition.beforeSearch,
     this.collapseOnSearchFocus = true,
     this.enabled = true,
+    this.ambientBaseLight,
+    this.glowRadius,
   })  : menuItems = null,
         menuAlignment = null,
         menuWidth = 200,
@@ -83,6 +85,8 @@ class GlassTabBarExtraButton {
     this.position = GlassExtraButtonPosition.beforeSearch,
     this.collapseOnSearchFocus = true,
     this.enabled = true,
+    this.ambientBaseLight,
+    this.glowRadius,
     this.menuAlignment,
     this.menuWidth = 200,
     this.menuHeight,
@@ -142,6 +146,14 @@ class GlassTabBarExtraButton {
   ///
   /// When false, the button does not respond to taps. Defaults to true.
   final bool enabled;
+
+  /// Forwarded to [GlassButton.ambientBaseLight]: the even white lift while
+  /// the button is pressed. Null keeps the button's default.
+  final double? ambientBaseLight;
+
+  /// Forwarded to [GlassButton.glowRadius]: the press sheen. Null keeps the
+  /// native default, 0 turns it off.
+  final double? glowRadius;
 
   /// When non-null, tapping this button opens a [GlassMenu] pull-down.
   ///
